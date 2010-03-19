@@ -69,6 +69,16 @@ module AuthlogicFacebookConnect
         rw_config(:facebook_skip_new_user_creation, value, false)
       end
       alias_method :facebook_skip_new_user_creation=, :facebook_skip_new_user_creation
+
+      # Should facebook login only be attempted if a predicate is satisfied?
+      # For example, if you have many login methods using the same controller
+      # action (e.g. UserSessionsController#create), the existence of a
+      # facebooker session will highjack the login process even if someone is
+      # trying to login with username/pass.
+      def facebook_auth_if(value = nil)
+        rw_config(:facebook_auth_if, value, true)
+      end
+      alias_method :facebook_auth_if=, :facebook_auth_if
     end
 
     module Methods
@@ -105,7 +115,10 @@ module AuthlogicFacebookConnect
               new_user.send(:"#{facebook_uid_field}=", facebook_session.user.uid)
               new_user.send(:"#{facebook_session_key_field}=", facebook_session.session_key)
             else
-              new_user.send(:"build_#{facebook_user_class.to_s.underscore}", :"#{facebook_uid_field}" => facebook_session.user.uid, :"#{facebook_session_key_field}" => facebook_session.session_key)
+              new_user.send(:"build_#{facebook_user_class.to_s.underscore}", {
+                :"#{facebook_uid_field}" => facebook_session.user.uid,
+                :"#{facebook_session_key_field}" => facebook_session.session_key
+              })
             end
 
             new_user.before_connect(facebook_session) if new_user.respond_to?(:before_connect)
@@ -113,28 +126,38 @@ module AuthlogicFacebookConnect
             self.attempted_record = new_user
 
             if facebook_valid_user
-              errors.add_to_base(
-                I18n.t('error_messages.facebook_user_creation_failed',
-                       :default => 'There was a problem creating a new user ' +
-                                   'for your Facebook account')) unless self.attempted_record.valid?
-
-              self.attempted_record = nil
+              unless self.attempted_record.valid?
+                errors.add_to_base(I18n.t('error_messages.facebook_user_creation_failed', {
+                  :default => 'There was a problem creating a new user for your Facebook account.'
+                }))
+                self.attempted_record = nil
+              end
             else
               self.attempted_record.save_with_validation(false)
             end
           rescue Facebooker::Session::SessionExpired
-            errors.add_to_base(I18n.t('error_messages.facebooker_session_expired',
-              :default => "Your Facebook Connect session has expired, please reconnect."))
+            errors.add_to_base(I18n.t('error_messages.facebooker_session_expired', {
+              :default => "Your Facebook Connect session has expired, please reconnect."
+            }))
           end
         end
       end
 
       def authenticating_with_facebook_connect?
         controller.set_facebook_session
-        attempted_record.nil? && errors.empty? && controller.facebook_session
+        facebook_auth_if && attempted_record.nil? && errors.empty? && controller.facebook_session
       end
 
       private
+
+      def facebook_auth_if
+        if self.class.facebook_auth_if.is_a?(Symbol) && self.respond_to?(self.class.facebook_auth_if, true)
+          self.send(self.class.facebook_auth_if)
+        else
+          self.class.facebook_auth_if
+        end
+      end
+
       def facebook_valid_user
         self.class.facebook_valid_user
       end
