@@ -12,11 +12,12 @@ module AuthlogicFacebookConnect
       #
       # The default behavior is to save the user without validations and then
       # in an application specific interface ask for the additional user
-      # details to make the user valid as facebook just provides a facebook id.
+      # details to make the user valid as facebook just provides a facebook
+      # id.
       #
-      # This is useful if you do want to turn on user validations, maybe if you
-      # just have facebook connect as an additional authentication solution and
-      # you already have valid users.
+      # This is useful if you do want to turn on user validations, maybe if
+      # you just have facebook connect as an additional authentication
+      # solution and you already have valid users.
       #
       # * <tt>Default:</tt> true
       # * <tt>Accepts:</tt> Boolean
@@ -38,8 +39,7 @@ module AuthlogicFacebookConnect
       end
       alias_method :facebook_uid_field=, :facebook_uid_field
 
-      # What session key field should be used for the facebook session key
-      #
+      # What session key field should be used for the facebook session key.
       #
       # * <tt>Default:</tt> :facebook_session_key
       # * <tt>Accepts:</tt> Symbol
@@ -48,7 +48,7 @@ module AuthlogicFacebookConnect
       end
       alias_method :facebook_session_key_field=, :facebook_session_key_field
 
-      # Class representing facebook users we want to authenticate against
+      # Class representing facebook users we want to authenticate against.
       #
       # * <tt>Default:</tt> klass
       # * <tt>Accepts:</tt> Class
@@ -57,10 +57,11 @@ module AuthlogicFacebookConnect
       end
       alias_method :facebook_user_class=, :facebook_user_class
 
-      # Should a new user creation be skipped if there is no user with given facebook uid?
+      # Should a new user creation be skipped if there is no user with given
+      # facebook uid?
       #
-      # The default behavior is not to skip (hence create new user). You may want to turn it on
-      # if you want to try with different model.
+      # The default behavior is not to skip (hence create new user). You may
+      # want to turn it on if you want to try with different model.
       #
       # * <tt>Default:</tt> false
       # * <tt>Accepts:</tt> Boolean
@@ -77,7 +78,8 @@ module AuthlogicFacebookConnect
         end
 
         def credentials=(value)
-          # TODO: Is there a nicer way to tell Authlogic that we don't have any credentials than this?
+          # TODO: Is there a nicer way to tell Authlogic that we don't have
+          # any credentials than this?
           values = [:facebook_connect]
           super
         end
@@ -94,9 +96,8 @@ module AuthlogicFacebookConnect
 
         unless self.attempted_record || facebook_skip_new_user_creation
           begin
-            # Get the user from facebook and create a local user.
-            #
-            # We assign it after the call to new in case the attribute is protected.
+            # Get the user from facebook and create a local user. We assign it
+            # after the call to new in case the attribute is protected.
 
             new_user = klass.new
 
